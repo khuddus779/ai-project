@@ -1,0 +1,115 @@
+{
+  "name": "ClockEntry",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string",
+      "description": "ID of the tenant"
+    },
+    "user_email": {
+      "type": "string",
+      "description": "Email of the user"
+    },
+    "user_name": {
+      "type": "string",
+      "description": "Name of the user"
+    },
+    "project_id": {
+      "type": "string",
+      "description": "Associated project ID"
+    },
+    "sprint_id": {
+      "type": "string",
+      "description": "Associated sprint ID (optional)"
+    },
+    "task_id": {
+      "type": "string",
+      "description": "Associated task ID"
+    },
+    "description": {
+      "type": "string",
+      "description": "Work description"
+    },
+    "clock_in_time": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When user clocked in"
+    },
+    "clock_out_time": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When user clocked out"
+    },
+    "clock_in_location": {
+      "type": "object",
+      "properties": {
+        "latitude": {
+          "type": "number"
+        },
+        "longitude": {
+          "type": "number"
+        },
+        "address": {
+          "type": "string"
+        },
+        "city": {
+          "type": "string"
+        },
+        "country": {
+          "type": "string"
+        },
+        "accuracy": {
+          "type": "number"
+        }
+      },
+      "description": "Location when clocked in"
+    },
+    "clock_out_location": {
+      "type": "object",
+      "properties": {
+        "latitude": {
+          "type": "number"
+        },
+        "longitude": {
+          "type": "number"
+        },
+        "address": {
+          "type": "string"
+        },
+        "city": {
+          "type": "string"
+        },
+        "country": {
+          "type": "string"
+        },
+        "accuracy": {
+          "type": "number"
+        }
+      },
+      "description": "Location when clocked out"
+    },
+    "is_clocked_in": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether user is currently clocked in"
+    },
+    "total_minutes": {
+      "type": "number",
+      "description": "Total duration in minutes"
+    },
+    "break_minutes": {
+      "type": "number",
+      "default": 0,
+      "description": "Break time in minutes"
+    },
+    "timesheet_id": {
+      "type": "string",
+      "description": "Associated timesheet entry ID (after clock out)"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "user_email",
+    "clock_in_time"
+  ]
+}

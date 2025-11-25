@@ -1,0 +1,85 @@
+{
+  "name": "ChatMessage",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string",
+      "description": "ID of the tenant this message belongs to"
+    },
+    "content": {
+      "type": "string",
+      "description": "Message content"
+    },
+    "sender_email": {
+      "type": "string",
+      "description": "Email of message sender"
+    },
+    "sender_name": {
+      "type": "string",
+      "description": "Name of message sender"
+    },
+    "chat_room": {
+      "type": "string",
+      "description": "Chat room identifier (e.g., 'general', 'project_id', 'task_id')"
+    },
+    "project_id": {
+      "type": "string",
+      "description": "Associated project ID (optional)"
+    },
+    "message_type": {
+      "type": "string",
+      "enum": [
+        "text",
+        "file",
+        "system",
+        "mention"
+      ],
+      "default": "text",
+      "description": "Type of message"
+    },
+    "file_url": {
+      "type": "string",
+      "description": "URL to uploaded file (if message_type is 'file')"
+    },
+    "file_name": {
+      "type": "string",
+      "description": "Original file name"
+    },
+    "mentions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Array of mentioned user emails"
+    },
+    "reply_to_id": {
+      "type": "string",
+      "description": "ID of message being replied to (threading)"
+    },
+    "reactions": {
+      "type": "object",
+      "description": "Emoji reactions with user emails"
+    },
+    "edited": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether message was edited"
+    },
+    "edited_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When message was last edited"
+    },
+    "is_deleted": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether message is deleted"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "content",
+    "sender_email",
+    "chat_room"
+  ]
+}

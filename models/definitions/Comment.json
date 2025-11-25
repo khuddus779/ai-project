@@ -1,0 +1,65 @@
+{
+  "name": "Comment",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string",
+      "description": "ID of the tenant this comment belongs to"
+    },
+    "content": {
+      "type": "string",
+      "description": "Comment text"
+    },
+    "entity_type": {
+      "type": "string",
+      "enum": [
+        "task",
+        "project"
+      ],
+      "description": "Type of entity being commented on"
+    },
+    "entity_id": {
+      "type": "string",
+      "description": "ID of the task or project"
+    },
+    "author_email": {
+      "type": "string",
+      "description": "Email of the comment author"
+    },
+    "author_name": {
+      "type": "string",
+      "description": "Name of the comment author"
+    },
+    "parent_comment_id": {
+      "type": "string",
+      "description": "ID of parent comment for threaded replies"
+    },
+    "mentions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Array of mentioned user emails"
+    },
+    "reactions": {
+      "type": "object",
+      "description": "Emoji reactions with user emails"
+    },
+    "edited": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether comment was edited"
+    },
+    "edited_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When comment was last edited"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "content",
+    "entity_type",
+    "entity_id"
+  ]
+}

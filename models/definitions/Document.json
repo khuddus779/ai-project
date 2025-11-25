@@ -1,0 +1,101 @@
+{
+  "name": "Document",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string",
+      "description": "ID of the tenant this document belongs to"
+    },
+    "title": {
+      "type": "string",
+      "description": "Document title"
+    },
+    "content": {
+      "type": "string",
+      "description": "Rich text content of the document"
+    },
+    "project_id": {
+      "type": "string",
+      "description": "Associated project ID (optional)"
+    },
+    "author_email": {
+      "type": "string",
+      "description": "Email of the document author"
+    },
+    "author_name": {
+      "type": "string",
+      "description": "Name of the document author"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "general",
+        "requirements",
+        "technical",
+        "meeting_notes",
+        "process",
+        "guide"
+      ],
+      "default": "general",
+      "description": "Document category"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Document tags for organization"
+    },
+    "version": {
+      "type": "number",
+      "default": 1,
+      "description": "Document version number"
+    },
+    "parent_document_id": {
+      "type": "string",
+      "description": "ID of previous version (for version control)"
+    },
+    "is_published": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether document is published and visible"
+    },
+    "is_archived": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether document is archived"
+    },
+    "ai_generated": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether document was AI-generated"
+    },
+    "last_edited_by": {
+      "type": "string",
+      "description": "Email of last editor"
+    },
+    "last_edited_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Last edit timestamp"
+    },
+    "collaborators": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Array of collaborator emails with edit access"
+    },
+    "views_count": {
+      "type": "number",
+      "default": 0,
+      "description": "Number of times document has been viewed"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "title",
+    "content",
+    "author_email"
+  ]
+}

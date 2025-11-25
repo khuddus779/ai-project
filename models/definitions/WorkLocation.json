@@ -1,0 +1,58 @@
+{
+  "name": "WorkLocation",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string",
+      "description": "ID of the tenant this work location belongs to"
+    },
+    "name": {
+      "type": "string",
+      "description": "Location name (e.g., 'Main Office', 'Client Site A')"
+    },
+    "address": {
+      "type": "string",
+      "description": "Full address"
+    },
+    "latitude": {
+      "type": "number",
+      "description": "Center latitude"
+    },
+    "longitude": {
+      "type": "number",
+      "description": "Center longitude"
+    },
+    "radius_meters": {
+      "type": "number",
+      "default": 100,
+      "description": "Radius in meters for geofencing"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether this location is active"
+    },
+    "location_type": {
+      "type": "string",
+      "enum": [
+        "office",
+        "client_site",
+        "remote",
+        "other"
+      ],
+      "default": "office",
+      "description": "Type of work location"
+    },
+    "allows_remote": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether remote work is allowed from this location"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "name",
+    "latitude",
+    "longitude"
+  ]
+}

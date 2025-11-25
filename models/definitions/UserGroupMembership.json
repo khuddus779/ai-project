@@ -1,0 +1,40 @@
+{
+  "name": "UserGroupMembership",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string",
+      "description": "ID of the tenant this membership belongs to"
+    },
+    "user_email": {
+      "type": "string",
+      "description": "Email of the user"
+    },
+    "user_name": {
+      "type": "string",
+      "description": "Name of the user"
+    },
+    "group_id": {
+      "type": "string",
+      "description": "ID of the user group"
+    },
+    "group_name": {
+      "type": "string",
+      "description": "Name of the user group"
+    },
+    "assigned_by": {
+      "type": "string",
+      "description": "Email of admin who assigned the user"
+    },
+    "assigned_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the user was added to the group"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "user_email",
+    "group_id"
+  ]
+}

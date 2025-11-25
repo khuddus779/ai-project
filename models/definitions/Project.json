@@ -1,0 +1,153 @@
+{
+  "name": "Project",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string",
+      "description": "ID of the tenant this project belongs to"
+    },
+    "workspace_id": {
+      "type": "string",
+      "description": "ID of the workspace this project belongs to"
+    },
+    "name": {
+      "type": "string",
+      "description": "Project name"
+    },
+    "description": {
+      "type": "string",
+      "description": "Project description"
+    },
+    "logo_url": {
+      "type": "string",
+      "description": "URL to project logo/icon"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "planning",
+        "active",
+        "on_hold",
+        "completed",
+        "cancelled"
+      ],
+      "default": "planning",
+      "description": "Project status"
+    },
+    "priority": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "urgent"
+      ],
+      "default": "medium",
+      "description": "Project priority"
+    },
+    "deadline": {
+      "type": "string",
+      "format": "date",
+      "description": "Project deadline"
+    },
+    "start_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Project start date"
+    },
+    "progress": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100,
+      "default": 0,
+      "description": "Project completion percentage"
+    },
+    "color": {
+      "type": "string",
+      "description": "Project color theme"
+    },
+    "owner": {
+      "type": "string",
+      "description": "Project owner email"
+    },
+    "client": {
+      "type": "string",
+      "description": "Client name or organization"
+    },
+    "budget": {
+      "type": "number",
+      "description": "Project budget"
+    },
+    "actual_cost": {
+      "type": "number",
+      "default": 0,
+      "description": "Actual cost incurred"
+    },
+    "currency": {
+      "type": "string",
+      "default": "USD",
+      "description": "Budget currency"
+    },
+    "template_id": {
+      "type": "string",
+      "description": "ID of template used to create this project"
+    },
+    "custom_fields": {
+      "type": "object",
+      "description": "Custom field values specific to this project"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Project tags for categorization"
+    },
+    "team_members": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "owner",
+              "manager",
+              "member",
+              "viewer"
+            ]
+          }
+        }
+      },
+      "description": "Project team members and their roles"
+    },
+    "is_archived": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether project is archived"
+    },
+    "health_score": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "AI-calculated project health score"
+    },
+    "risk_level": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ],
+      "description": "Current risk level"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "name"
+  ]
+}

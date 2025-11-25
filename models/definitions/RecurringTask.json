@@ -1,0 +1,70 @@
+{
+  "name": "RecurringTask",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string",
+      "description": "ID of the tenant this recurring task belongs to"
+    },
+    "project_id": {
+      "type": "string",
+      "description": "Associated project ID"
+    },
+    "title": {
+      "type": "string",
+      "description": "Task title template"
+    },
+    "description": {
+      "type": "string",
+      "description": "Task description template"
+    },
+    "priority": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "urgent"
+      ],
+      "default": "medium"
+    },
+    "assigned_to": {
+      "type": "string",
+      "description": "Default assignee email"
+    },
+    "frequency": {
+      "type": "string",
+      "enum": [
+        "daily",
+        "weekly",
+        "biweekly",
+        "monthly"
+      ],
+      "description": "How often to create the task"
+    },
+    "day_of_week": {
+      "type": "number",
+      "description": "For weekly tasks (0=Sunday, 6=Saturday)"
+    },
+    "day_of_month": {
+      "type": "number",
+      "description": "For monthly tasks (1-31)"
+    },
+    "active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether recurring task is active"
+    },
+    "last_created": {
+      "type": "string",
+      "format": "date",
+      "description": "Last date task was created"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "project_id",
+    "title",
+    "frequency"
+  ]
+}

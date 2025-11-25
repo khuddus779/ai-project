@@ -1,0 +1,154 @@
+{
+  "name": "ProjectTemplate",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string",
+      "description": "ID of the tenant this template belongs to (null for global templates)"
+    },
+    "name": {
+      "type": "string",
+      "description": "Template name"
+    },
+    "description": {
+      "type": "string",
+      "description": "Template description"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "software_development",
+        "marketing",
+        "construction",
+        "research",
+        "event",
+        "product_launch",
+        "custom"
+      ],
+      "default": "custom",
+      "description": "Template category"
+    },
+    "icon": {
+      "type": "string",
+      "description": "Icon name for the template"
+    },
+    "color": {
+      "type": "string",
+      "description": "Theme color for projects created from this template"
+    },
+    "default_priority": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "urgent"
+      ],
+      "default": "medium"
+    },
+    "default_status": {
+      "type": "string",
+      "enum": [
+        "planning",
+        "active",
+        "on_hold",
+        "completed"
+      ],
+      "default": "planning"
+    },
+    "estimated_duration_days": {
+      "type": "number",
+      "description": "Estimated project duration in days"
+    },
+    "task_templates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "task_type": {
+            "type": "string",
+            "enum": [
+              "story",
+              "bug",
+              "epic",
+              "task",
+              "technical_debt"
+            ]
+          },
+          "priority": {
+            "type": "string",
+            "enum": [
+              "low",
+              "medium",
+              "high",
+              "urgent"
+            ]
+          },
+          "estimated_hours": {
+            "type": "number"
+          },
+          "order": {
+            "type": "number"
+          },
+          "dependencies": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          }
+        }
+      },
+      "description": "Template tasks to be created with the project"
+    },
+    "milestones": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "days_from_start": {
+            "type": "number"
+          }
+        }
+      },
+      "description": "Project milestones"
+    },
+    "custom_fields_schema": {
+      "type": "object",
+      "description": "Schema for custom fields to be added to projects"
+    },
+    "is_public": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether this template is available to all users"
+    },
+    "is_global": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether this is a global template (available to all tenants)"
+    },
+    "created_by": {
+      "type": "string",
+      "description": "Email of template creator"
+    },
+    "usage_count": {
+      "type": "number",
+      "default": 0,
+      "description": "Number of times this template has been used"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

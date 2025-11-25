@@ -1,0 +1,82 @@
+{
+  "name": "ProjectFile",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string",
+      "description": "ID of the tenant this file belongs to"
+    },
+    "project_id": {
+      "type": "string",
+      "description": "Associated project ID"
+    },
+    "file_name": {
+      "type": "string",
+      "description": "Original file name"
+    },
+    "file_url": {
+      "type": "string",
+      "description": "URL to the uploaded file"
+    },
+    "file_type": {
+      "type": "string",
+      "description": "MIME type of the file"
+    },
+    "file_size": {
+      "type": "number",
+      "description": "File size in bytes"
+    },
+    "uploaded_by": {
+      "type": "string",
+      "description": "Email of user who uploaded the file"
+    },
+    "uploaded_by_name": {
+      "type": "string",
+      "description": "Name of user who uploaded the file"
+    },
+    "description": {
+      "type": "string",
+      "description": "File description or notes"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "document",
+        "image",
+        "spreadsheet",
+        "presentation",
+        "code",
+        "design",
+        "other"
+      ],
+      "default": "other",
+      "description": "File category"
+    },
+    "version": {
+      "type": "number",
+      "default": 1,
+      "description": "File version number"
+    },
+    "parent_file_id": {
+      "type": "string",
+      "description": "ID of previous version (for version control)"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "File tags for organization"
+    },
+    "is_archived": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether file is archived"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "file_name",
+    "file_url"
+  ]
+}

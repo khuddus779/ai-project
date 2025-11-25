@@ -1,0 +1,49 @@
+{
+  "name": "Sprint",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string",
+      "description": "ID of the tenant this sprint belongs to"
+    },
+    "name": {
+      "type": "string",
+      "description": "Sprint name"
+    },
+    "project_id": {
+      "type": "string",
+      "description": "Associated project ID"
+    },
+    "start_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Sprint start date"
+    },
+    "end_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Sprint end date"
+    },
+    "goal": {
+      "type": "string",
+      "description": "Sprint goal"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "planned",
+        "active",
+        "completed"
+      ],
+      "default": "planned",
+      "description": "Sprint status"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "name",
+    "project_id",
+    "start_date",
+    "end_date"
+  ]
+}

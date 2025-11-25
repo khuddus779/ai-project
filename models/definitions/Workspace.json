@@ -1,0 +1,78 @@
+{
+  "name": "Workspace",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string",
+      "description": "ID of the tenant this workspace belongs to"
+    },
+    "name": {
+      "type": "string",
+      "description": "Name of the workspace"
+    },
+    "description": {
+      "type": "string",
+      "description": "Description of the workspace"
+    },
+    "owner_email": {
+      "type": "string",
+      "description": "Email of the user who owns this workspace"
+    },
+    "owner_name": {
+      "type": "string",
+      "description": "Name of the workspace owner"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "archived"
+      ],
+      "default": "active",
+      "description": "Status of the workspace"
+    },
+    "members": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "user_email": {
+            "type": "string"
+          },
+          "user_name": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "admin",
+              "member",
+              "viewer"
+            ]
+          }
+        }
+      },
+      "description": "List of members and their roles within this workspace"
+    },
+    "color": {
+      "type": "string",
+      "default": "blue",
+      "description": "A color associated with the workspace for UI differentiation"
+    },
+    "icon": {
+      "type": "string",
+      "default": "folder",
+      "description": "An icon name for the workspace"
+    },
+    "is_default": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether this is the default workspace for the tenant"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "name",
+    "owner_email"
+  ]
+}

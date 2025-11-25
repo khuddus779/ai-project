@@ -1,0 +1,58 @@
+{
+  "name": "UserPresence",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string",
+      "description": "ID of the tenant this presence belongs to"
+    },
+    "user_email": {
+      "type": "string",
+      "description": "Email of the user"
+    },
+    "user_name": {
+      "type": "string",
+      "description": "Name of the user"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "online",
+        "away",
+        "busy",
+        "offline"
+      ],
+      "default": "online",
+      "description": "User's current status"
+    },
+    "last_seen": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Last activity timestamp"
+    },
+    "current_page": {
+      "type": "string",
+      "description": "Current page user is viewing"
+    },
+    "current_chat_room": {
+      "type": "string",
+      "description": "Current chat room user is in"
+    },
+    "is_typing": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether user is currently typing"
+    },
+    "typing_in_room": {
+      "type": "string",
+      "description": "Chat room where user is typing"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "user_email",
+    "user_name",
+    "status",
+    "last_seen"
+  ]
+}

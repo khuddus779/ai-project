@@ -1,0 +1,67 @@
+{
+  "name": "User",
+  "type": "object",
+  "properties": {
+    "email": {
+      "type": "string",
+      "description": "User email address"
+    },
+    "password": {
+      "type": "string",
+      "description": "Hashed password"
+    },
+    "full_name": {
+      "type": "string",
+      "description": "User's full name"
+    },
+    "role": {
+      "type": "string",
+      "enum": ["owner", "admin", "manager", "member", "guest"],
+      "default": "member",
+      "description": "User role in the system"
+    },
+    "tenant_id": {
+      "type": "string",
+      "description": "ID of the main organization/tenant"
+    },
+    "active_tenant_id": {
+      "type": "string",
+      "description": "ID of the tenant the user is currently viewing"
+    },
+    "is_super_admin": {
+      "type": "boolean",
+      "default": false,
+      "description": "Platform-level admin access"
+    },
+    "profile_image_url": {
+      "type": "string",
+      "description": "URL to avatar image"
+    },
+    "job_title": {
+      "type": "string",
+      "description": "User's professional title"
+    },
+    "department": {
+      "type": "string",
+      "description": "Department name"
+    },
+    "phone_number": {
+      "type": "string",
+      "description": "Contact number"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["active", "invited", "suspended"],
+      "default": "active"
+    },
+    "last_login": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "settings": {
+      "type": "object",
+      "description": "User specific UI preferences"
+    }
+  },
+  "required": ["email", "password", "tenant_id"]
+}

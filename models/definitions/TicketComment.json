@@ -1,0 +1,61 @@
+{
+  "name": "TicketComment",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string",
+      "description": "ID of the tenant this comment belongs to"
+    },
+    "ticket_id": {
+      "type": "string",
+      "description": "ID of the ticket this comment belongs to"
+    },
+    "author_email": {
+      "type": "string",
+      "description": "Email of the comment author"
+    },
+    "author_name": {
+      "type": "string",
+      "description": "Name of the comment author"
+    },
+    "author_role": {
+      "type": "string",
+      "description": "Role of the author (support, admin, user)"
+    },
+    "content": {
+      "type": "string",
+      "description": "Comment text"
+    },
+    "is_internal": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether this is an internal note visible only to support team"
+    },
+    "is_resolution": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether this comment includes resolution details"
+    },
+    "attachments": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "File attachments"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "ticket_id",
+    "author_email",
+    "content"
+  ]
+}

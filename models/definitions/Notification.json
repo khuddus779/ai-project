@@ -1,0 +1,57 @@
+{
+  "name": "Notification",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string",
+      "description": "ID of the tenant this notification belongs to"
+    },
+    "recipient_email": {
+      "type": "string",
+      "description": "Email of the notification recipient"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "task_assigned",
+        "task_completed",
+        "comment_added",
+        "project_updated",
+        "mention"
+      ],
+      "description": "Type of notification"
+    },
+    "title": {
+      "type": "string",
+      "description": "Notification title"
+    },
+    "message": {
+      "type": "string",
+      "description": "Notification message"
+    },
+    "entity_type": {
+      "type": "string",
+      "description": "Related entity type"
+    },
+    "entity_id": {
+      "type": "string",
+      "description": "Related entity ID"
+    },
+    "read": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether notification has been read"
+    },
+    "sender_name": {
+      "type": "string",
+      "description": "Name of the user who triggered the notification"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "recipient_email",
+    "type",
+    "title",
+    "message"
+  ]
+}

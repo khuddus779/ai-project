@@ -1,0 +1,160 @@
+{
+  "name": "Timesheet",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string",
+      "description": "ID of the tenant this timesheet belongs to"
+    },
+    "user_email": {
+      "type": "string",
+      "description": "Email of the user logging time"
+    },
+    "user_name": {
+      "type": "string",
+      "description": "Name of the user"
+    },
+    "project_id": {
+      "type": "string",
+      "description": "Associated project ID"
+    },
+    "project_name": {
+      "type": "string",
+      "description": "Project name"
+    },
+    "sprint_id": {
+      "type": "string",
+      "description": "Associated sprint ID (optional)"
+    },
+    "sprint_name": {
+      "type": "string",
+      "description": "Sprint name"
+    },
+    "task_id": {
+      "type": "string",
+      "description": "Associated task ID"
+    },
+    "task_title": {
+      "type": "string",
+      "description": "Task title"
+    },
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date of work"
+    },
+    "start_time": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Work start time (for clock in/out)"
+    },
+    "end_time": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Work end time (for clock in/out)"
+    },
+    "hours": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 24,
+      "description": "Hours worked"
+    },
+    "minutes": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 59,
+      "description": "Minutes worked"
+    },
+    "total_minutes": {
+      "type": "number",
+      "description": "Total duration in minutes (hours * 60 + minutes)"
+    },
+    "description": {
+      "type": "string",
+      "description": "Detailed work description"
+    },
+    "location": {
+      "type": "object",
+      "properties": {
+        "latitude": {
+          "type": "number"
+        },
+        "longitude": {
+          "type": "number"
+        },
+        "address": {
+          "type": "string"
+        },
+        "city": {
+          "type": "string"
+        },
+        "country": {
+          "type": "string"
+        },
+        "accuracy": {
+          "type": "number"
+        }
+      },
+      "description": "GPS location data when time was logged"
+    },
+    "is_within_work_zone": {
+      "type": "boolean",
+      "description": "Whether location is within predefined work zones"
+    },
+    "location_verified": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether admin has verified the location"
+    },
+    "entry_type": {
+      "type": "string",
+      "enum": [
+        "manual",
+        "clock_in_out",
+        "auto"
+      ],
+      "default": "manual",
+      "description": "How the entry was created"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "pending",
+        "approved",
+        "rejected"
+      ],
+      "default": "draft",
+      "description": "Approval status"
+    },
+    "approved_by": {
+      "type": "string",
+      "description": "Admin who approved/rejected"
+    },
+    "approved_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When approved/rejected"
+    },
+    "rejection_reason": {
+      "type": "string",
+      "description": "Reason for rejection"
+    },
+    "is_billable": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether this time is billable"
+    },
+    "break_minutes": {
+      "type": "number",
+      "default": 0,
+      "description": "Break time in minutes (deducted from total)"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "user_email",
+    "date",
+    "hours"
+  ]
+}

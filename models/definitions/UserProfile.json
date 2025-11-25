@@ -1,0 +1,74 @@
+{
+  "name": "UserProfile",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "Reference to the User ID"
+    },
+    "user_email": {
+      "type": "string",
+      "description": "User's email address (for easy lookup)"
+    },
+    "tenant_id": {
+      "type": "string",
+      "description": "Tenant this profile belongs to"
+    },
+    "full_name": {
+      "type": "string",
+      "description": "User's full name"
+    },
+    "phone": {
+      "type": "string",
+      "description": "User's phone number"
+    },
+    "address": {
+      "type": "string",
+      "description": "User's address"
+    },
+    "department": {
+      "type": "string",
+      "description": "Department or team"
+    },
+    "job_title": {
+      "type": "string",
+      "description": "Job title or position"
+    },
+    "bio": {
+      "type": "string",
+      "description": "Short biography or description"
+    },
+    "profile_image_url": {
+      "type": "string",
+      "description": "URL to profile image"
+    },
+    "preferences": {
+      "type": "object",
+      "properties": {
+        "theme": {
+          "type": "string",
+          "enum": [
+            "light",
+            "dark",
+            "system"
+          ],
+          "default": "system"
+        },
+        "notifications_enabled": {
+          "type": "boolean",
+          "default": true
+        },
+        "email_notifications": {
+          "type": "boolean",
+          "default": true
+        }
+      },
+      "description": "User preferences and settings"
+    }
+  },
+  "required": [
+    "user_id",
+    "user_email",
+    "tenant_id"
+  ]
+}

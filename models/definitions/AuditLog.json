@@ -1,0 +1,125 @@
+{
+  "name": "AuditLog",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string",
+      "description": "ID of the tenant this log belongs to"
+    },
+    "action": {
+      "type": "string",
+      "enum": [
+        "create",
+        "update",
+        "delete",
+        "login",
+        "logout",
+        "invite",
+        "permission_change",
+        "role_change",
+        "status_change",
+        "export",
+        "import",
+        "restore",
+        "archive"
+      ],
+      "description": "Type of action performed"
+    },
+    "entity_type": {
+      "type": "string",
+      "enum": [
+        "user",
+        "project",
+        "task",
+        "sprint",
+        "document",
+        "template",
+        "group",
+        "tenant",
+        "settings",
+        "file",
+        "comment",
+        "workspace",
+        "ticket",
+        "timesheet"
+      ],
+      "description": "Type of entity affected"
+    },
+    "entity_id": {
+      "type": "string",
+      "description": "ID of the affected entity"
+    },
+    "entity_name": {
+      "type": "string",
+      "description": "Name/title of the affected entity"
+    },
+    "user_email": {
+      "type": "string",
+      "description": "Email of user who performed the action"
+    },
+    "user_name": {
+      "type": "string",
+      "description": "Name of user who performed the action"
+    },
+    "user_role": {
+      "type": "string",
+      "description": "Role of user at time of action"
+    },
+    "ip_address": {
+      "type": "string",
+      "description": "IP address from which action was performed"
+    },
+    "user_agent": {
+      "type": "string",
+      "description": "Browser/device information"
+    },
+    "changes": {
+      "type": "object",
+      "properties": {
+        "before": {
+          "type": "object",
+          "description": "State before the change"
+        },
+        "after": {
+          "type": "object",
+          "description": "State after the change"
+        }
+      },
+      "description": "Detailed change information"
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Additional context about the action"
+    },
+    "severity": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ],
+      "default": "low",
+      "description": "Severity level of the action"
+    },
+    "success": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether the action was successful"
+    },
+    "error_message": {
+      "type": "string",
+      "description": "Error message if action failed"
+    },
+    "description": {
+      "type": "string",
+      "description": "Human-readable description of the action"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "action",
+    "entity_type",
+    "user_email"
+  ]
+}

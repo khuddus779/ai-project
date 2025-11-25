@@ -1,0 +1,183 @@
+{
+  "name": "Ticket",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string",
+      "description": "ID of the tenant this ticket belongs to"
+    },
+    "ticket_number": {
+      "type": "string",
+      "description": "Unique ticket identifier (e.g., TKT-001)"
+    },
+    "title": {
+      "type": "string",
+      "description": "Short summary of the bug or issue"
+    },
+    "description": {
+      "type": "string",
+      "description": "Detailed description of the bug, including steps to reproduce"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "open",
+        "in_progress",
+        "waiting_response",
+        "resolved",
+        "closed",
+        "reopened"
+      ],
+      "default": "open",
+      "description": "Current status of the ticket"
+    },
+    "priority": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ],
+      "default": "medium",
+      "description": "Severity of the bug"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "bug",
+        "feature_request",
+        "question",
+        "feedback",
+        "other"
+      ],
+      "default": "bug",
+      "description": "Type of the ticket"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "dashboard",
+        "projects",
+        "tasks",
+        "timesheets",
+        "ai_assistant",
+        "collaboration",
+        "reports",
+        "user_management",
+        "other"
+      ],
+      "description": "Feature category where the issue occurred"
+    },
+    "reporter_email": {
+      "type": "string",
+      "description": "Email of the user who reported the bug"
+    },
+    "reporter_name": {
+      "type": "string",
+      "description": "Name of the user who reported the bug"
+    },
+    "reporter_role": {
+      "type": "string",
+      "description": "Role of the reporter (admin, user, etc.)"
+    },
+    "assigned_to_email": {
+      "type": "string",
+      "description": "Email of the support agent assigned to the ticket"
+    },
+    "assigned_to_name": {
+      "type": "string",
+      "description": "Name of the support agent assigned"
+    },
+    "project_id": {
+      "type": "string",
+      "description": "Optional: ID of the project related to the bug"
+    },
+    "page_url": {
+      "type": "string",
+      "description": "URL/page where the bug occurred"
+    },
+    "browser_info": {
+      "type": "string",
+      "description": "Browser and device information"
+    },
+    "screenshots": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "URLs of attached screenshots"
+    },
+    "attachments": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "Additional file attachments"
+    },
+    "resolution_notes": {
+      "type": "string",
+      "description": "Notes about how the issue was resolved"
+    },
+    "resolved_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the ticket was marked as resolved"
+    },
+    "resolved_by": {
+      "type": "string",
+      "description": "Email of support agent who resolved it"
+    },
+    "closed_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the ticket was closed"
+    },
+    "first_response_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When first response was provided"
+    },
+    "last_activity_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Last activity timestamp"
+    },
+    "response_time_minutes": {
+      "type": "number",
+      "description": "Time taken for first response (in minutes)"
+    },
+    "resolution_time_minutes": {
+      "type": "number",
+      "description": "Time taken to resolve (in minutes)"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Custom tags for categorization"
+    },
+    "internal_notes": {
+      "type": "string",
+      "description": "Private notes visible only to support team"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "title",
+    "description",
+    "reporter_email"
+  ]
+}

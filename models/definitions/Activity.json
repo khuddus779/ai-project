@@ -1,0 +1,54 @@
+{
+  "name": "Activity",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string",
+      "description": "ID of the tenant this activity belongs to"
+    },
+    "action": {
+      "type": "string",
+      "description": "Action performed (created, updated, completed, commented, etc.)"
+    },
+    "entity_type": {
+      "type": "string",
+      "enum": [
+        "task",
+        "project",
+        "comment",
+        "document"
+      ],
+      "description": "Type of entity"
+    },
+    "entity_id": {
+      "type": "string",
+      "description": "ID of the entity"
+    },
+    "entity_name": {
+      "type": "string",
+      "description": "Name/title of the entity"
+    },
+    "project_id": {
+      "type": "string",
+      "description": "Associated project ID"
+    },
+    "user_email": {
+      "type": "string",
+      "description": "User who performed the action"
+    },
+    "user_name": {
+      "type": "string",
+      "description": "Name of user who performed the action"
+    },
+    "details": {
+      "type": "string",
+      "description": "Additional details about the activity"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "action",
+    "entity_type",
+    "entity_id"
+  ]
+}

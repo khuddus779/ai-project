@@ -1,0 +1,148 @@
+{
+  "name": "UserGroup",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string",
+      "description": "ID of the tenant this group belongs to"
+    },
+    "name": {
+      "type": "string",
+      "description": "Group name"
+    },
+    "description": {
+      "type": "string",
+      "description": "Group description"
+    },
+    "permissions": {
+      "type": "object",
+      "properties": {
+        "projects": {
+          "type": "object",
+          "properties": {
+            "create": {
+              "type": "boolean",
+              "default": false
+            },
+            "read": {
+              "type": "boolean",
+              "default": true
+            },
+            "update": {
+              "type": "boolean",
+              "default": false
+            },
+            "delete": {
+              "type": "boolean",
+              "default": false
+            }
+          }
+        },
+        "tasks": {
+          "type": "object",
+          "properties": {
+            "create": {
+              "type": "boolean",
+              "default": false
+            },
+            "read": {
+              "type": "boolean",
+              "default": true
+            },
+            "update": {
+              "type": "boolean",
+              "default": false
+            },
+            "delete": {
+              "type": "boolean",
+              "default": false
+            },
+            "assign": {
+              "type": "boolean",
+              "default": false
+            }
+          }
+        },
+        "timesheets": {
+          "type": "object",
+          "properties": {
+            "create": {
+              "type": "boolean",
+              "default": true
+            },
+            "read": {
+              "type": "boolean",
+              "default": true
+            },
+            "update": {
+              "type": "boolean",
+              "default": false
+            },
+            "delete": {
+              "type": "boolean",
+              "default": false
+            },
+            "approve": {
+              "type": "boolean",
+              "default": false
+            }
+          }
+        },
+        "team": {
+          "type": "object",
+          "properties": {
+            "view": {
+              "type": "boolean",
+              "default": true
+            },
+            "manage": {
+              "type": "boolean",
+              "default": false
+            }
+          }
+        },
+        "reports": {
+          "type": "object",
+          "properties": {
+            "view": {
+              "type": "boolean",
+              "default": false
+            },
+            "export": {
+              "type": "boolean",
+              "default": false
+            }
+          }
+        },
+        "automation": {
+          "type": "object",
+          "properties": {
+            "view": {
+              "type": "boolean",
+              "default": false
+            },
+            "manage": {
+              "type": "boolean",
+              "default": false
+            }
+          }
+        }
+      },
+      "description": "Granular permissions for the group"
+    },
+    "color": {
+      "type": "string",
+      "default": "blue",
+      "description": "Display color for the group"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether the group is active"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "name"
+  ]
+}

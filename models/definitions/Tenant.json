@@ -1,0 +1,413 @@
+{
+  "name": "Tenant",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Tenant/Company name"
+    },
+    "slug": {
+      "type": "string",
+      "description": "URL-friendly identifier for the tenant"
+    },
+    "domain": {
+      "type": "string",
+      "description": "Custom domain or subdomain for tenant (e.g., tenantname.app.com)"
+    },
+    "custom_domain": {
+      "type": "string",
+      "description": "Custom domain if tenant brings their own (e.g., portal.company.com)"
+    },
+    "industry": {
+      "type": "string",
+      "description": "Business type or industry for classification"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "suspended",
+        "trial",
+        "cancelled",
+        "pending"
+      ],
+      "default": "pending",
+      "description": "Tenant account status"
+    },
+    "subscription_plan": {
+      "type": "string",
+      "enum": [
+        "free",
+        "starter",
+        "professional",
+        "enterprise"
+      ],
+      "default": "free",
+      "description": "Current subscription plan"
+    },
+    "subscription_type": {
+      "type": "string",
+      "enum": [
+        "trial",
+        "monthly",
+        "annual",
+        "custom"
+      ],
+      "default": "trial",
+      "description": "Subscription billing type"
+    },
+    "subscription_status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "past_due",
+        "cancelled",
+        "trialing"
+      ],
+      "default": "trialing",
+      "description": "Subscription payment status"
+    },
+    "subscription_start_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the subscription begins"
+    },
+    "trial_ends_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the trial period ends"
+    },
+    "subscription_ends_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the current subscription period ends"
+    },
+    "owner_user_id": {
+      "type": "string",
+      "description": "ID of the primary admin user for this tenant"
+    },
+    "owner_email": {
+      "type": "string",
+      "description": "Email of the tenant owner"
+    },
+    "owner_name": {
+      "type": "string",
+      "description": "Name of the tenant owner"
+    },
+    "owner_phone": {
+      "type": "string",
+      "description": "Phone number of the tenant owner"
+    },
+    "owner_job_title": {
+      "type": "string",
+      "description": "Job title of the tenant owner"
+    },
+    "admin_username": {
+      "type": "string",
+      "description": "Username for tenant admin login"
+    },
+    "sso_type": {
+      "type": "string",
+      "enum": [
+        "local",
+        "saml",
+        "oauth",
+        "azure_ad",
+        "google"
+      ],
+      "default": "local",
+      "description": "SSO/Authentication type"
+    },
+    "company_phone": {
+      "type": "string",
+      "description": "Company phone number"
+    },
+    "company_address": {
+      "type": "string",
+      "description": "Company address"
+    },
+    "company_city": {
+      "type": "string",
+      "description": "Company city"
+    },
+    "company_state": {
+      "type": "string",
+      "description": "Company state/province"
+    },
+    "company_country": {
+      "type": "string",
+      "description": "Company country"
+    },
+    "company_postal_code": {
+      "type": "string",
+      "description": "Company postal/zip code"
+    },
+    "tax_id": {
+      "type": "string",
+      "description": "Company tax identification number"
+    },
+    "gst_number": {
+      "type": "string",
+      "description": "GST number (for India)"
+    },
+    "vat_number": {
+      "type": "string",
+      "description": "VAT number (for EU)"
+    },
+    "company_registration_number": {
+      "type": "string",
+      "description": "Company registration/incorporation number"
+    },
+    "billing_contact_name": {
+      "type": "string",
+      "description": "Billing contact name (if different from owner)"
+    },
+    "billing_email": {
+      "type": "string",
+      "description": "Email for billing notifications"
+    },
+    "billing_currency": {
+      "type": "string",
+      "default": "USD",
+      "description": "Billing currency (USD, EUR, INR, GBP, etc.)"
+    },
+    "billing_payment_method": {
+      "type": "string",
+      "enum": [
+        "credit_card",
+        "invoice",
+        "bank_transfer",
+        "paypal"
+      ],
+      "description": "Preferred payment method"
+    },
+    "max_users": {
+      "type": "number",
+      "default": 5,
+      "description": "Maximum number of users allowed"
+    },
+    "max_projects": {
+      "type": "number",
+      "default": 10,
+      "description": "Maximum number of projects allowed"
+    },
+    "max_workspaces": {
+      "type": "number",
+      "default": 1,
+      "description": "Maximum number of workspaces allowed"
+    },
+    "max_storage_gb": {
+      "type": "number",
+      "default": 5,
+      "description": "Maximum storage in GB"
+    },
+    "current_storage_gb": {
+      "type": "number",
+      "default": 0,
+      "description": "Current storage usage in GB"
+    },
+    "data_region": {
+      "type": "string",
+      "enum": [
+        "us-east-1",
+        "us-west-2",
+        "eu-west-1",
+        "eu-central-1",
+        "ap-south-1",
+        "ap-southeast-1"
+      ],
+      "default": "us-east-1",
+      "description": "Data center region for compliance and latency"
+    },
+    "default_language": {
+      "type": "string",
+      "default": "en-US",
+      "description": "Default language/locale for the tenant"
+    },
+    "default_timezone": {
+      "type": "string",
+      "default": "UTC",
+      "description": "Default timezone for the tenant"
+    },
+    "features_enabled": {
+      "type": "object",
+      "properties": {
+        "ai_assistant": {
+          "type": "boolean",
+          "default": true
+        },
+        "code_review": {
+          "type": "boolean",
+          "default": false
+        },
+        "advanced_analytics": {
+          "type": "boolean",
+          "default": false
+        },
+        "custom_branding": {
+          "type": "boolean",
+          "default": false
+        },
+        "api_access": {
+          "type": "boolean",
+          "default": false
+        }
+      },
+      "description": "Feature flags for this tenant"
+    },
+    "api_access_enabled": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether tenant has API access"
+    },
+    "api_rate_limit": {
+      "type": "number",
+      "default": 1000,
+      "description": "API rate limit per hour"
+    },
+    "smtp_config": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": false
+        },
+        "host": {
+          "type": "string"
+        },
+        "port": {
+          "type": "number"
+        },
+        "username": {
+          "type": "string"
+        },
+        "from_email": {
+          "type": "string"
+        },
+        "from_name": {
+          "type": "string"
+        }
+      },
+      "description": "Custom SMTP configuration for tenant emails"
+    },
+    "integration_settings": {
+      "type": "object",
+      "description": "Tenant-specific integration configurations (CRM, ERP, etc.)"
+    },
+    "branding": {
+      "type": "object",
+      "properties": {
+        "logo_url": {
+          "type": "string"
+        },
+        "primary_color": {
+          "type": "string"
+        },
+        "company_website": {
+          "type": "string"
+        }
+      },
+      "description": "Custom branding settings"
+    },
+    "stripe_customer_id": {
+      "type": "string",
+      "description": "Stripe customer ID for billing"
+    },
+    "stripe_subscription_id": {
+      "type": "string",
+      "description": "Stripe subscription ID"
+    },
+    "terms_accepted": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether Terms & Conditions have been accepted"
+    },
+    "terms_accepted_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When Terms & Conditions were accepted"
+    },
+    "dpa_accepted": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether Data Processing Agreement has been accepted"
+    },
+    "dpa_accepted_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When DPA was accepted"
+    },
+    "privacy_policy_accepted": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether Privacy Policy has been accepted"
+    },
+    "privacy_policy_accepted_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When Privacy Policy was accepted"
+    },
+    "internal_notes": {
+      "type": "string",
+      "description": "Internal notes for Super Admin use only"
+    },
+    "onboarding_completed": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether the tenant has completed onboarding"
+    },
+    "onboarding_step": {
+      "type": "number",
+      "default": 0,
+      "description": "Current onboarding step (0-5)"
+    },
+    "onboarding_data": {
+      "type": "object",
+      "properties": {
+        "completed_steps": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "skipped_steps": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "Tracking data for onboarding progress"
+    },
+    "notification_preferences": {
+      "type": "object",
+      "properties": {
+        "email_notifications": {
+          "type": "boolean",
+          "default": true
+        },
+        "weekly_digest": {
+          "type": "boolean",
+          "default": true
+        },
+        "project_updates": {
+          "type": "boolean",
+          "default": true
+        },
+        "system_announcements": {
+          "type": "boolean",
+          "default": true
+        }
+      },
+      "description": "Tenant-wide notification preferences"
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Additional tenant-specific metadata"
+    }
+  },
+  "required": [
+    "name",
+    "owner_email"
+  ]
+}
