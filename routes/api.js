@@ -1,170 +1,231 @@
 const express = require('express');
-const router = express.Router(); // <--- This line was missing and caused the crash
+const router = express.Router();
+const mongoose = require('mongoose');
 const Models = require('../models/SchemaDefinitions');
-const OpenAI = require('openai');
+const { GoogleGenerativeAI } = require("@google/generative-ai");
 const nodemailer = require('nodemailer');
+const fs = require('fs');
+const path = require('path');
+
+// --- CONFIGURATION ---
+// Primary model to try first
+const PRIMARY_MODEL = "gemini-2.5-flash"; 
+// Fallback model if primary is overloaded (503)
+const FALLBACK_MODEL = "gemini-2.0-flash"; 
+
+// Helper to Convert URL to Inline Data for Gemini
+function getFileHandler(filePath) {
+  const ext = path.extname(filePath).toLowerCase();
+  const mediaTypes = {
+    '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', 
+    '.webp': 'image/webp', '.pdf': 'application/pdf'
+  };
+  // Text types we should read and append to prompt
+  const textTypes = [
+    '.txt', '.md', '.csv', '.json', '.js', '.jsx', '.ts', '.tsx', 
+    '.html', '.css', '.py', '.java', '.c', '.cpp', '.env'
+  ];
+
+  if (mediaTypes[ext]) return { type: 'media', mimeType: mediaTypes[ext] };
+  if (textTypes.includes(ext)) return { type: 'text' };
+  return { type: 'unsupported' };
+}
 
 // ==========================================
-// 1. Generic Entity Routes (The "BaaS" Logic)
+// 1. Generic Entity Routes (BaaS)
 // ==========================================
 
-// Generic List/Filter
 router.post('/entities/:entity/filter', async (req, res) => {
   try {
-    const modelName = req.params.entity;
-    const Model = Models[modelName];
+    const Model = Models[req.params.entity];
+    if (!Model) return res.status(400).json({ msg: `Entity not found` });
     
-    if (!Model) return res.status(400).json({ msg: `Entity ${modelName} not found` });
-
     const { filters = {}, sort } = req.body;
+    if ((filters._id && !mongoose.Types.ObjectId.isValid(filters._id)) || 
+        (filters.id && !mongoose.Types.ObjectId.isValid(filters.id))) {
+      return res.json([]);
+    }
+
     let query = Model.find(filters);
-    
     if (sort) {
-      // Handle sort string like '-created_date'
       const sortObj = {};
       if (sort.startsWith('-')) sortObj[sort.substring(1)] = -1;
       else sortObj[sort] = 1;
       query = query.sort(sortObj);
     }
-
-    const results = await query.exec();
-    res.json(results);
-  } catch (err) {
-    console.error(`Error listing ${req.params.entity}:`, err.message);
-    res.status(500).send(err.message);
-  }
+    res.json(await query.exec());
+  } catch (err) { res.json([]); }
 });
 
-// Generic Create
 router.post('/entities/:entity/create', async (req, res) => {
   try {
-    const modelName = req.params.entity;
-    const Model = Models[modelName];
-    if (!Model) return res.status(400).json({ msg: `Entity ${modelName} not found` });
-
-    // --- FIX: Auto-inject tenant_id if missing ---
-    const payload = { ...req.body };
-    if (!payload.tenant_id) {
-      payload.tenant_id = "default-tenant"; 
-    }
-    // ---------------------------------------------
-
-    const newItem = new Model(payload);
-    const savedItem = await newItem.save();
-    res.json(savedItem);
-  } catch (err) {
-    console.error(`Error creating ${req.params.entity}:`, err.message);
-    // Don't crash the app, send a 400 error
-    res.status(400).json({ error: err.message });
-  }
+    const Model = Models[req.params.entity];
+    if (!Model) return res.status(400).json({ msg: `Entity not found` });
+    const item = new Model(req.body);
+    res.json(await item.save());
+  } catch (err) { res.status(400).json({ error: err.message }); }
 });
 
-// Generic Update
 router.post('/entities/:entity/update', async (req, res) => {
   try {
-    const modelName = req.params.entity;
-    const Model = Models[modelName];
-    if (!Model) return res.status(400).json({ msg: `Entity ${modelName} not found` });
-
-    const { id, data } = req.body;
-    const updatedItem = await Model.findByIdAndUpdate(id, data, { new: true });
-    res.json(updatedItem);
-  } catch (err) {
-    console.error(`Error updating ${req.params.entity}:`, err.message);
-    res.status(500).send(err.message);
-  }
+    const Model = Models[req.params.entity];
+    if (!Model) return res.status(400).json({ msg: `Entity not found` });
+    if (!mongoose.Types.ObjectId.isValid(req.body.id)) return res.status(400).json({ error: "Invalid ID" });
+    
+    res.json(await Model.findByIdAndUpdate(req.body.id, req.body.data, { new: true }));
+  } catch (err) { res.status(500).send(err.message); }
 });
 
-// Generic Delete
 router.post('/entities/:entity/delete', async (req, res) => {
   try {
-    const modelName = req.params.entity;
-    const Model = Models[modelName];
-    if (!Model) return res.status(400).json({ msg: `Entity ${modelName} not found` });
-
+    const Model = Models[req.params.entity];
+    if (!Model) return res.status(400).json({ msg: `Entity not found` });
+    if (!mongoose.Types.ObjectId.isValid(req.body.id)) return res.status(400).json({ error: "Invalid ID" });
+    
     await Model.findByIdAndDelete(req.body.id);
     res.json({ success: true });
-  } catch (err) {
-    console.error(`Error deleting ${req.params.entity}:`, err.message);
-    res.status(500).send(err.message);
-  }
+  } catch (err) { res.status(500).send(err.message); }
 });
 
 // ==========================================
-// 2. AI Integration Route (Groq / Llama 3)
+// 2. AI Integration Route (With Retry & Fallback)
 // ==========================================
 
-router.post('/integrations/llm', async (req, res) => {
-  const { prompt } = req.body;
-
-  // Check if API Key is configured
-  if (!process.env.OPENAI_API_KEY) {
-    console.warn("⚠️ AI Call failed: Missing OPENAI_API_KEY in .env");
-    return res.json({ 
-      result: "⚠️ AI Config Missing: Please add your Groq API Key to backend/.env as OPENAI_API_KEY" 
+async function generateWithRetry(genAI, modelName, params, retries = 3) {
+  try {
+    const model = genAI.getGenerativeModel({ 
+      model: modelName,
+      generationConfig: params.generationConfig,
+      systemInstruction: params.systemInstruction
     });
+    
+    return await model.generateContent(params.content);
+  } catch (error) {
+    const isOverloaded = error.message.includes('503') || error.message.includes('overloaded');
+    
+    if (isOverloaded && retries > 0) {
+      console.log(`⚠️ Model ${modelName} overloaded. Retrying in 2s... (${retries} attempts left)`);
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      return generateWithRetry(genAI, modelName, params, retries - 1);
+    }
+    
+    // If retries exhausted or error is not 503, throw it
+    throw error;
+  }
+}
+
+router.post('/integrations/llm', async (req, res) => {
+  const { prompt, response_json_schema, context, file_urls } = req.body;
+
+  if (!process.env.GEMINI_API_KEY) {
+    return res.json("AI Configuration Error: Missing GEMINI_API_KEY in .env");
   }
 
   try {
-    // Configure client to point to Groq's servers
-    const openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-      baseURL: "https://api.groq.com/openai/v1" 
-    });
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    
+    const generationConfig = {};
+    if (response_json_schema) {
+      generationConfig.responseMimeType = "application/json";
+    }
 
-    const completion = await openai.chat.completions.create({
-      messages: [
-        { role: "system", content: "You are Aivora, a helpful project management AI assistant." },
-        { role: "user", content: prompt }
-      ],
-      model: "llama-3.1-8b-instant", 
-    });
+    // Prepare system instructions
+    const systemInstruction = context ? {
+      role: "system",
+      parts: [{ text: `You are Aivora, an intelligent project management assistant. \n\nSYSTEM DATA:\n${context}\n\nUse this data to answer questions.` }]
+    } : undefined;
 
-    // Send back just the text result
-    const aiResponse = completion.choices[0].message.content;
-    res.json(aiResponse);
+    // Build prompt parts
+    const parts = [{ text: prompt }];
+
+    // Handle Files
+    if (file_urls && Array.isArray(file_urls)) {
+      for (const url of file_urls) {
+        if (url.includes('/uploads/')) {
+          const filename = url.split('/uploads/')[1];
+          const filePath = path.join(__dirname, '..', 'uploads', filename);
+          
+          if (fs.existsSync(filePath)) {
+            const handler = getFileHandler(filePath);
+            const fileBuffer = fs.readFileSync(filePath);
+
+            if (handler.type === 'media') {
+              parts.push({
+                inlineData: {
+                  data: fileBuffer.toString("base64"),
+                  mimeType: handler.mimeType
+                }
+              });
+            } else if (handler.type === 'text') {
+              const fileContent = fileBuffer.toString('utf-8');
+              parts.push({
+                text: `\n\n--- FILE CONTENT: ${filename} ---\n${fileContent}\n--- END FILE ---\n`
+              });
+            }
+          }
+        }
+      }
+    }
+
+    const content = { contents: [{ role: "user", parts }] };
+    const params = { generationConfig, systemInstruction, content };
+
+    let result;
+    try {
+      // Try primary model with retries
+      result = await generateWithRetry(genAI, PRIMARY_MODEL, params);
+    } catch (primaryError) {
+      console.error(`❌ Primary model ${PRIMARY_MODEL} failed:`, primaryError.message);
+      
+      // Fallback to secondary model if it's a 503/404
+      if (primaryError.message.includes('503') || primaryError.message.includes('404')) {
+        console.log(`🔄 Switching to fallback model: ${FALLBACK_MODEL}`);
+        result = await generateWithRetry(genAI, FALLBACK_MODEL, params, 1); // 1 retry for fallback
+      } else {
+        throw primaryError;
+      }
+    }
+
+    const response = await result.response;
+    let text = response.text();
+
+    if (response_json_schema) {
+        text = text.replace(/```json/g, '').replace(/```/g, '').trim();
+        try {
+            return res.json(JSON.parse(text));
+        } catch (e) {
+            return res.json({ error: "AI generated invalid JSON." });
+        }
+    }
+
+    res.json(text);
 
   } catch (err) {
     console.error("❌ AI Error:", err.message);
-    // Return a friendly error so the frontend doesn't crash
-    res.json({ 
-      result: "I encountered an error connecting to the AI brain. Please check the backend logs." 
+    res.status(500).json({ 
+      result: "I'm currently experiencing high traffic. Please try again in a moment." 
     });
   }
 });
 
-// In routes/api.js
+// ==========================================
+// 3. Email Integration
+// ==========================================
 
 router.post('/integrations/email', async (req, res) => {
   const { to, subject, body } = req.body;
-
-  // Check if credentials exist
-  if (!process.env.MAIL_USERNAME || !process.env.MAIL_PASSWORD) {
-    return res.status(500).json({ error: "Server email configuration missing" });
-  }
+  if (!process.env.MAIL_USERNAME) return res.status(500).json({ error: "Email config missing" });
 
   try {
     const transporter = nodemailer.createTransport({
-      host: process.env.MAIL_HOST, // smtp.gmail.com
-      port: Number(process.env.MAIL_PORT), // 587
-      secure: false, // false for 587, true for 465
-      auth: {
-        user: process.env.MAIL_USERNAME,
-        pass: process.env.MAIL_PASSWORD,
-      },
+      host: process.env.MAIL_HOST,
+      port: Number(process.env.MAIL_PORT),
+      secure: false,
+      auth: { user: process.env.MAIL_USERNAME, pass: process.env.MAIL_PASSWORD },
     });
-
-    await transporter.sendMail({
-      from: `"${process.env.MAIL_FROM_NAME}" <${process.env.MAIL_FROM_ADDRESS}>`,
-      to,
-      subject,
-      html: body,
-    });
-
+    await transporter.sendMail({ from: `"${process.env.MAIL_FROM_NAME}" <${process.env.MAIL_FROM_ADDRESS}>`, to, subject, html: body });
     res.json({ success: true });
-  } catch (err) {
-    console.error("Email Error:", err);
-    res.status(500).json({ error: "Failed to send email: " + err.message });
-  }
+  } catch (err) { res.status(500).json({ error: "Failed to send email" }); }
 });
+
 module.exports = router;
