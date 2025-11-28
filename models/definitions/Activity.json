@@ -16,7 +16,12 @@
         "task",
         "project",
         "comment",
-        "document"
+        "document",
+        "sprint", 
+        "user",
+        "file",
+        "group",
+        "workspace"
       ],
       "description": "Type of entity"
     },

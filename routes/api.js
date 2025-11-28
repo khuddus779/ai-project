@@ -8,10 +8,8 @@ const fs = require('fs');
 const path = require('path');
 
 // --- CONFIGURATION ---
-// Primary model to try first
-const PRIMARY_MODEL = "gemini-2.5-flash"; 
-// Fallback model if primary is overloaded (503)
-const FALLBACK_MODEL = "gemini-2.0-flash"; 
+const PRIMARY_MODEL = "gemini-2.0-flash"; // Updated for stability
+const FALLBACK_MODEL = "gemini-1.5-flash"; 
 
 // Helper to Convert URL to Inline Data for Gemini
 function getFileHandler(filePath) {
@@ -20,7 +18,6 @@ function getFileHandler(filePath) {
     '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', 
     '.webp': 'image/webp', '.pdf': 'application/pdf'
   };
-  // Text types we should read and append to prompt
   const textTypes = [
     '.txt', '.md', '.csv', '.json', '.js', '.jsx', '.ts', '.tsx', 
     '.html', '.css', '.py', '.java', '.c', '.cpp', '.env'
@@ -29,6 +26,26 @@ function getFileHandler(filePath) {
   if (mediaTypes[ext]) return { type: 'media', mimeType: mediaTypes[ext] };
   if (textTypes.includes(ext)) return { type: 'text' };
   return { type: 'unsupported' };
+}
+
+// AI Helper
+async function generateWithRetry(genAI, modelName, params, retries = 3) {
+  try {
+    const model = genAI.getGenerativeModel({ 
+      model: modelName,
+      generationConfig: params.generationConfig,
+      systemInstruction: params.systemInstruction
+    });
+    return await model.generateContent(params.content);
+  } catch (error) {
+    const isOverloaded = error.message.includes('503') || error.message.includes('overloaded');
+    if (isOverloaded && retries > 0) {
+      console.log(`⚠️ Model ${modelName} overloaded. Retrying...`);
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      return generateWithRetry(genAI, modelName, params, retries - 1);
+    }
+    throw error;
+  }
 }
 
 // ==========================================
@@ -41,12 +58,16 @@ router.post('/entities/:entity/filter', async (req, res) => {
     if (!Model) return res.status(400).json({ msg: `Entity not found` });
     
     const { filters = {}, sort } = req.body;
-    if ((filters._id && !mongoose.Types.ObjectId.isValid(filters._id)) || 
-        (filters.id && !mongoose.Types.ObjectId.isValid(filters.id))) {
-      return res.json([]);
+    
+    // Sanitize filters
+    const cleanFilters = {};
+    for (const key in filters) {
+      if (filters[key] !== undefined && filters[key] !== '') {
+        cleanFilters[key] = filters[key];
+      }
     }
 
-    let query = Model.find(filters);
+    let query = Model.find(cleanFilters);
     if (sort) {
       const sortObj = {};
       if (sort.startsWith('-')) sortObj[sort.substring(1)] = -1;
@@ -88,31 +109,97 @@ router.post('/entities/:entity/delete', async (req, res) => {
 });
 
 // ==========================================
-// 2. AI Integration Route (With Retry & Fallback)
+// 2. NEW: AI Sprint Task Generation Route
 // ==========================================
 
-async function generateWithRetry(genAI, modelName, params, retries = 3) {
-  try {
-    const model = genAI.getGenerativeModel({ 
-      model: modelName,
-      generationConfig: params.generationConfig,
-      systemInstruction: params.systemInstruction
-    });
-    
-    return await model.generateContent(params.content);
-  } catch (error) {
-    const isOverloaded = error.message.includes('503') || error.message.includes('overloaded');
-    
-    if (isOverloaded && retries > 0) {
-      console.log(`⚠️ Model ${modelName} overloaded. Retrying in 2s... (${retries} attempts left)`);
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      return generateWithRetry(genAI, modelName, params, retries - 1);
-    }
-    
-    // If retries exhausted or error is not 503, throw it
-    throw error;
+router.post('/ai/generate-sprint-tasks', async (req, res) => {
+  const { sprintId, projectId, workspaceId, tenantId, goal, userEmail } = req.body;
+
+  if (!process.env.GEMINI_API_KEY) {
+    return res.status(500).json({ error: "AI Configuration Error" });
   }
-}
+  if (!projectId || !tenantId || !workspaceId) {
+    return res.status(400).json({ error: "Missing required context (projectId, tenantId, or workspaceId)" });
+  }
+
+  try {
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    
+    const prompt = `You are an expert project manager. Create 5-8 concrete, actionable tasks for a sprint.
+    
+    Sprint Goal: "${goal || 'General project progress'}"
+    
+    Return a JSON object with a "tasks" array. Each task must have:
+    - title (string)
+    - description (string)
+    - task_type (enum: "story", "bug", "task", "technical_debt")
+    - priority (enum: "low", "medium", "high", "urgent")
+    - estimated_hours (number)
+    - acceptance_criteria (string)
+    `;
+
+    const params = {
+      generationConfig: { responseMimeType: "application/json" },
+      content: { contents: [{ role: "user", parts: [{ text: prompt }] }] }
+    };
+
+    let result;
+    try {
+      result = await generateWithRetry(genAI, PRIMARY_MODEL, params);
+    } catch (e) {
+      result = await generateWithRetry(genAI, FALLBACK_MODEL, params);
+    }
+
+    const text = result.response.text();
+    const aiData = JSON.parse(text);
+    const tasks = aiData.tasks || [];
+
+    // Augment tasks with system data
+    const tasksToCreate = tasks.map(t => ({
+      ...t,
+      tenant_id: tenantId,
+      project_id: projectId,
+      workspace_id: workspaceId,
+      sprint_id: sprintId,
+      status: 'todo',
+      ai_generated: true,
+      reporter: userEmail,
+      created_date: new Date(),
+      updated_date: new Date()
+    }));
+
+    if (tasksToCreate.length === 0) {
+      return res.json({ message: "No tasks generated", tasks: [] });
+    }
+
+    // Bulk Insert
+    const createdTasks = await Models.Task.insertMany(tasksToCreate);
+
+    // Log Activity (Single log for the batch)
+    try {
+      await Models.Activity.create({
+        tenant_id: tenantId,
+        action: 'created',
+        entity_type: 'sprint',
+        entity_id: sprintId,
+        entity_name: 'AI Tasks',
+        project_id: projectId,
+        user_email: userEmail,
+        details: `AI generated ${createdTasks.length} tasks based on goal: ${goal}`
+      });
+    } catch (e) { console.error("Activity log failed", e); }
+
+    res.json({ success: true, tasks: createdTasks });
+
+  } catch (err) {
+    console.error("AI Task Gen Error:", err);
+    res.status(500).json({ error: "Failed to generate tasks: " + err.message });
+  }
+});
+
+// ==========================================
+// 3. Standard AI Route
+// ==========================================
 
 router.post('/integrations/llm', async (req, res) => {
   const { prompt, response_json_schema, context, file_urls } = req.body;
@@ -123,93 +210,43 @@ router.post('/integrations/llm', async (req, res) => {
 
   try {
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    const generationConfig = response_json_schema ? { responseMimeType: "application/json" } : {};
     
-    const generationConfig = {};
-    if (response_json_schema) {
-      generationConfig.responseMimeType = "application/json";
-    }
-
-    // Prepare system instructions
-    const systemInstruction = context ? {
-      role: "system",
-      parts: [{ text: `You are Aivora, an intelligent project management assistant. \n\nSYSTEM DATA:\n${context}\n\nUse this data to answer questions.` }]
-    } : undefined;
-
-    // Build prompt parts
     const parts = [{ text: prompt }];
+    if (context) parts.push({ text: `CONTEXT:\n${context}` });
+    
+    const params = {
+        generationConfig,
+        content: { contents: [{ role: "user", parts }] }
+    };
 
-    // Handle Files
-    if (file_urls && Array.isArray(file_urls)) {
-      for (const url of file_urls) {
-        if (url.includes('/uploads/')) {
-          const filename = url.split('/uploads/')[1];
-          const filePath = path.join(__dirname, '..', 'uploads', filename);
-          
-          if (fs.existsSync(filePath)) {
-            const handler = getFileHandler(filePath);
-            const fileBuffer = fs.readFileSync(filePath);
-
-            if (handler.type === 'media') {
-              parts.push({
-                inlineData: {
-                  data: fileBuffer.toString("base64"),
-                  mimeType: handler.mimeType
-                }
-              });
-            } else if (handler.type === 'text') {
-              const fileContent = fileBuffer.toString('utf-8');
-              parts.push({
-                text: `\n\n--- FILE CONTENT: ${filename} ---\n${fileContent}\n--- END FILE ---\n`
-              });
-            }
-          }
-        }
-      }
-    }
-
-    const content = { contents: [{ role: "user", parts }] };
-    const params = { generationConfig, systemInstruction, content };
-
-    let result;
-    try {
-      // Try primary model with retries
-      result = await generateWithRetry(genAI, PRIMARY_MODEL, params);
-    } catch (primaryError) {
-      console.error(`❌ Primary model ${PRIMARY_MODEL} failed:`, primaryError.message);
-      
-      // Fallback to secondary model if it's a 503/404
-      if (primaryError.message.includes('503') || primaryError.message.includes('404')) {
-        console.log(`🔄 Switching to fallback model: ${FALLBACK_MODEL}`);
-        result = await generateWithRetry(genAI, FALLBACK_MODEL, params, 1); // 1 retry for fallback
-      } else {
-        throw primaryError;
-      }
-    }
-
-    const response = await result.response;
-    let text = response.text();
+    const result = await generateWithRetry(genAI, PRIMARY_MODEL, params);
+    const text = result.response.text();
 
     if (response_json_schema) {
-        text = text.replace(/```json/g, '').replace(/```/g, '').trim();
-        try {
-            return res.json(JSON.parse(text));
-        } catch (e) {
-            return res.json({ error: "AI generated invalid JSON." });
+        // FIX: Clean markdown code blocks before parsing
+        const cleanText = text.replace(/```json\n?|\n?```/g, '').trim();
+        try { 
+            return res.json(JSON.parse(cleanText)); 
+        } catch (e) { 
+            console.error("JSON Parse Error:", e.message);
+            // Fallback: try to find JSON object if mixed content
+            const jsonMatch = cleanText.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+                try { return res.json(JSON.parse(jsonMatch[0])); } catch(e2) {}
+            }
+            return res.json({ error: "Invalid JSON response from AI" }); 
         }
     }
-
     res.json(text);
 
   } catch (err) {
-    console.error("❌ AI Error:", err.message);
-    res.status(500).json({ 
-      result: "I'm currently experiencing high traffic. Please try again in a moment." 
-    });
+    console.error("AI Route Error:", err);
+    res.status(500).json({ result: "AI Service currently unavailable." });
   }
 });
-
 // ==========================================
-// 3. Email Integration
+// 4. Email Integration
 // ==========================================
 
 router.post('/integrations/email', async (req, res) => {
