@@ -372,28 +372,34 @@ router.post('/integrations/llm', async (req, res) => {
 router.post('/integrations/email', async (req, res) => {
   const { to, subject, body } = req.body;
 
-  // 1. Check if credentials exist
+  // 1. Validate Config
   if (!process.env.MAIL_USERNAME || !process.env.MAIL_PASSWORD) {
-    console.error("❌ [Email] Missing MAIL_USERNAME or MAIL_PASSWORD in Environment Variables");
+    console.error("❌ [Email] Missing MAIL_USERNAME or MAIL_PASSWORD");
     return res.status(500).json({ error: "Server email configuration is missing." });
   }
 
   try {
-    console.log(`📧 [Email] Attempting to send to: ${to}`);
+    console.log(`📧 [Email] Connecting to Gmail (SSL/465) for: ${to}`);
 
-    // 2. Use 'service: gmail' for automatic configuration
-    // This automatically handles the correct ports (465/587) and security settings
+    // 2. Force SSL on Port 465
+    // This is the most reliable setting for Render/Cloud hosting
     const transporter = nodemailer.createTransport({
-      service: 'gmail', 
-      auth: { 
-        user: process.env.MAIL_USERNAME, 
-        pass: process.env.MAIL_PASSWORD 
+      host: "smtp.gmail.com",
+      port: 465,
+      secure: true, // Use SSL
+      auth: {
+        user: process.env.MAIL_USERNAME,
+        pass: process.env.MAIL_PASSWORD
+      },
+      tls: {
+        // Prevent hanging on certificate issues
+        rejectUnauthorized: false
       }
     });
 
     // 3. Verify Connection
     await transporter.verify();
-    console.log("✅ [Email] Gmail connection verified");
+    console.log("✅ [Email] Gmail SSL Connection verified");
 
     // 4. Send Mail
     const fromName = process.env.MAIL_FROM_NAME ? process.env.MAIL_FROM_NAME.replace(/"/g, '') : "Aivora";
@@ -404,15 +410,22 @@ router.post('/integrations/email', async (req, res) => {
       html: body 
     });
 
-    console.log(`✅ [Email] Message sent: ${info.messageId}`);
+    console.log(`✅ [Email] Sent: ${info.messageId}`);
     res.json({ success: true });
 
   } catch (err) { 
     console.error("❌ [Email Error]:", err);
     
-    // Give a helpful error if it's a timeout
+    // Provide specific guidance based on error type
     if (err.code === 'ETIMEDOUT') {
-        return res.status(500).json({ error: "Connection timed out. Render may be blocking the port." });
+        return res.status(500).json({ 
+            error: "Connection timed out. Render is failing to reach Gmail on Port 465." 
+        });
+    }
+    if (err.code === 'EAUTH') {
+        return res.status(500).json({ 
+            error: "Login failed. Please check your Gmail App Password." 
+        });
     }
     
     res.status(500).json({ error: err.message }); 
