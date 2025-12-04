@@ -372,27 +372,30 @@ router.post('/integrations/llm', async (req, res) => {
 router.post('/integrations/email', async (req, res) => {
   const { to, subject, body } = req.body;
 
+  // 1. Check if credentials exist
   if (!process.env.MAIL_USERNAME || !process.env.MAIL_PASSWORD) {
-    console.error("❌ [Email] Missing MAIL_USERNAME or MAIL_PASSWORD");
+    console.error("❌ [Email] Missing MAIL_USERNAME or MAIL_PASSWORD in Environment Variables");
     return res.status(500).json({ error: "Server email configuration is missing." });
   }
 
   try {
     console.log(`📧 [Email] Attempting to send to: ${to}`);
 
+    // 2. Use 'service: gmail' for automatic configuration
+    // This automatically handles the correct ports (465/587) and security settings
     const transporter = nodemailer.createTransport({
-      host: process.env.MAIL_HOST || 'smtp.gmail.com',
-      port: Number(process.env.MAIL_PORT) || 587,
-      secure: Number(process.env.MAIL_PORT) === 465, 
+      service: 'gmail', 
       auth: { 
         user: process.env.MAIL_USERNAME, 
         pass: process.env.MAIL_PASSWORD 
-      },
-      tls: { rejectUnauthorized: false }
+      }
     });
 
+    // 3. Verify Connection
     await transporter.verify();
+    console.log("✅ [Email] Gmail connection verified");
 
+    // 4. Send Mail
     const fromName = process.env.MAIL_FROM_NAME ? process.env.MAIL_FROM_NAME.replace(/"/g, '') : "Aivora";
     const info = await transporter.sendMail({ 
       from: `"${fromName}" <${process.env.MAIL_FROM_ADDRESS || process.env.MAIL_USERNAME}>`, 
@@ -406,6 +409,12 @@ router.post('/integrations/email', async (req, res) => {
 
   } catch (err) { 
     console.error("❌ [Email Error]:", err);
+    
+    // Give a helpful error if it's a timeout
+    if (err.code === 'ETIMEDOUT') {
+        return res.status(500).json({ error: "Connection timed out. Render may be blocking the port." });
+    }
+    
     res.status(500).json({ error: err.message }); 
   }
 });
