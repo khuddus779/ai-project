@@ -14,15 +14,12 @@ const FALLBACK_MODEL = "gemini-1.5-flash";
 
 // Helper: Robustly find a file in common upload directories
 function findFileLocally(filename) {
-  // Clean filename to remove URL parameters or path traversal attempts
   const cleanName = path.basename(filename);
-  
   const possiblePaths = [
-    path.join(__dirname, '..', 'uploads', cleanName),        // routes/../uploads
-    path.join(process.cwd(), 'uploads', cleanName),          // root/uploads
-    path.join(process.cwd(), 'public', 'uploads', cleanName),// root/public/uploads
-    path.join(__dirname, 'uploads', cleanName),              // routes/uploads
-    // Fallback for some cloud environments
+    path.join(__dirname, '..', 'uploads', cleanName),        
+    path.join(process.cwd(), 'uploads', cleanName),          
+    path.join(process.cwd(), 'public', 'uploads', cleanName),
+    path.join(__dirname, 'uploads', cleanName),              
     path.join('/tmp', cleanName)
   ];
 
@@ -56,8 +53,6 @@ function getFileHandler(filePath) {
 
   if (mediaTypes[ext]) return { type: 'media', mimeType: mediaTypes[ext] };
   if (textTypes.includes(ext)) return { type: 'text' };
-  
-  // Default to text if unknown but likely text
   return { type: 'unsupported' }; 
 }
 
@@ -221,7 +216,7 @@ router.post('/ai/generate-sprint-tasks', async (req, res) => {
 });
 
 // ==========================================
-// 3. Standard AI Route (FIXED FOR ROBUST FILE HANDLING)
+// 3. Standard AI Route (UPDATED FOR CLEAN FORMATTING)
 // ==========================================
 
 router.post('/integrations/llm', async (req, res) => {
@@ -241,7 +236,6 @@ router.post('/integrations/llm', async (req, res) => {
     if (file_urls && Array.isArray(file_urls) && file_urls.length > 0) {
         for (const url of file_urls) {
             try {
-                // Decode filename (handles spaces like "Project Specs.pdf")
                 const cleanUrl = decodeURIComponent(url);
                 const filename = cleanUrl.split('/').pop();
                 const handler = getFileHandler(filename);
@@ -254,7 +248,7 @@ router.post('/integrations/llm', async (req, res) => {
 
                 let processed = false;
                 
-                // A. Try Local File System First (Fastest & Most Reliable)
+                // A. Try Local File System First
                 const localPath = findFileLocally(filename);
                 
                 if (localPath) {
@@ -279,9 +273,8 @@ router.post('/integrations/llm', async (req, res) => {
                     }
                 }
 
-                // B. Fallback to HTTP Download (If file is remote or path failed)
+                // B. Fallback to HTTP Download
                 if (!processed) {
-                    // Fix Relative URLs: If url is "/uploads/..." prepend the host
                     let downloadUrl = url;
                     if (url.startsWith('/')) {
                         const protocol = req.protocol || 'http';
@@ -316,13 +309,12 @@ router.post('/integrations/llm', async (req, res) => {
     // 2. Construct Final Prompt
     let finalPrompt = "";
     
-    // Explicitly tell AI about the files so it doesn't ignore them
     if (loadedFiles.length > 0) {
-        finalPrompt += `[SYSTEM: The user has attached ${loadedFiles.length} file(s): ${loadedFiles.join(', ')}. You MUST analyze these files to answer the user's query. Do not ignore them.]\n\n`;
+        finalPrompt += `[SYSTEM: The user has attached ${loadedFiles.length} file(s): ${loadedFiles.join(', ')}. Analyze these files to answer the query.]\n\n`;
     }
     
     if (skippedFiles.length > 0) {
-        finalPrompt += `[SYSTEM WARNING: Could not read these files: ${skippedFiles.join(', ')}. Please inform the user.]\n\n`;
+        finalPrompt += `[SYSTEM WARNING: Could not read these files: ${skippedFiles.join(', ')}.]\n\n`;
     }
 
     finalPrompt += `USER QUERY: ${prompt}`;
@@ -333,16 +325,30 @@ router.post('/integrations/llm', async (req, res) => {
     
     parts.push({ text: finalPrompt });
     
-    // 3. Add Context (As secondary info)
+    // 3. Add Context
     if (context) {
         parts.push({ text: `\n\n[BACKGROUND CONTEXT]\n${context}` });
     }
     
+    // --- UPDATED SYSTEM INSTRUCTIONS FOR CLEANER FORMATTING ---
     const params = {
         generationConfig,
         content: { contents: [{ role: "user", parts }] },
         systemInstruction: {
-            parts: [{ text: "You are a project assistant. Priority #1: Analyze the attached files (PDFs, Images, Code) if any are present. Use the file content as the primary source of truth. Priority #2: Answer the user's question accurately." }]
+            parts: [{ 
+              text: `You are Aivora, an intelligent Project Assistant.
+              
+              PRIORITIES:
+              1. Use attached files as the primary source of truth.
+              2. Use the [BACKGROUND CONTEXT] if no files are provided.
+              
+              RESPONSE FORMATTING (STRICT):
+              - **Start with a Summary:** Always begin with a high-level summary (e.g., "You have 4 overdue tasks" or "There are 3 active projects").
+              - **Clean Lists:** Use simple bullet points for items. 
+              - **Avoid Visual Clutter:** Do NOT use pipes (|), Markdown Tables, or raw JSON dumps.
+              - **Date Formatting:** NEVER show times like "T00:00:00.000Z". Always format dates as "Nov 27, 2025" or "27 Nov 2025".
+              - **Task Format:** For tasks, use this format: * **Task Title** (Priority: High) - Due: Date - Assigned: Name` 
+            }]
         }
     };
 
@@ -365,17 +371,43 @@ router.post('/integrations/llm', async (req, res) => {
 
 router.post('/integrations/email', async (req, res) => {
   const { to, subject, body } = req.body;
-  if (!process.env.MAIL_USERNAME) return res.status(500).json({ error: "Email config missing" });
+
+  if (!process.env.MAIL_USERNAME || !process.env.MAIL_PASSWORD) {
+    console.error("❌ [Email] Missing MAIL_USERNAME or MAIL_PASSWORD");
+    return res.status(500).json({ error: "Server email configuration is missing." });
+  }
+
   try {
+    console.log(`📧 [Email] Attempting to send to: ${to}`);
+
     const transporter = nodemailer.createTransport({
-      host: process.env.MAIL_HOST,
-      port: Number(process.env.MAIL_PORT),
-      secure: false,
-      auth: { user: process.env.MAIL_USERNAME, pass: process.env.MAIL_PASSWORD },
+      host: process.env.MAIL_HOST || 'smtp.gmail.com',
+      port: Number(process.env.MAIL_PORT) || 587,
+      secure: Number(process.env.MAIL_PORT) === 465, 
+      auth: { 
+        user: process.env.MAIL_USERNAME, 
+        pass: process.env.MAIL_PASSWORD 
+      },
+      tls: { rejectUnauthorized: false }
     });
-    await transporter.sendMail({ from: `"${process.env.MAIL_FROM_NAME}" <${process.env.MAIL_FROM_ADDRESS}>`, to, subject, html: body });
+
+    await transporter.verify();
+
+    const fromName = process.env.MAIL_FROM_NAME ? process.env.MAIL_FROM_NAME.replace(/"/g, '') : "Aivora";
+    const info = await transporter.sendMail({ 
+      from: `"${fromName}" <${process.env.MAIL_FROM_ADDRESS || process.env.MAIL_USERNAME}>`, 
+      to, 
+      subject, 
+      html: body 
+    });
+
+    console.log(`✅ [Email] Message sent: ${info.messageId}`);
     res.json({ success: true });
-  } catch (err) { res.status(500).json({ error: "Failed to send email" }); }
+
+  } catch (err) { 
+    console.error("❌ [Email Error]:", err);
+    res.status(500).json({ error: err.message }); 
+  }
 });
 
 module.exports = router;
