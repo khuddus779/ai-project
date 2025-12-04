@@ -372,7 +372,6 @@ router.post('/integrations/llm', async (req, res) => {
 router.post('/integrations/email', async (req, res) => {
   const { to, subject, body } = req.body;
 
-  // 1. Validate Config
   if (!process.env.MAIL_USERNAME || !process.env.MAIL_PASSWORD) {
     console.error("❌ [Email] Missing MAIL_USERNAME or MAIL_PASSWORD");
     return res.status(500).json({ error: "Server email configuration is missing." });
@@ -381,27 +380,29 @@ router.post('/integrations/email', async (req, res) => {
   try {
     console.log(`📧 [Email] Connecting to Gmail (SSL/465) for: ${to}`);
 
-    // 2. Force SSL on Port 465
-    // This is the most reliable setting for Render/Cloud hosting
     const transporter = nodemailer.createTransport({
       host: "smtp.gmail.com",
       port: 465,
-      secure: true, // Use SSL
+      secure: true,
       auth: {
         user: process.env.MAIL_USERNAME,
         pass: process.env.MAIL_PASSWORD
       },
+      // --- NEW NETWORK SETTINGS ---
       tls: {
-        // Prevent hanging on certificate issues
         rejectUnauthorized: false
-      }
+      },
+      // Force IPv4 (Fixes common cloud network timeouts)
+      family: 4, 
+      // Increase timeouts to prevent premature disconnects
+      connectionTimeout: 10000, // 10 seconds
+      greetingTimeout: 10000,
+      socketTimeout: 10000
     });
 
-    // 3. Verify Connection
     await transporter.verify();
     console.log("✅ [Email] Gmail SSL Connection verified");
 
-    // 4. Send Mail
     const fromName = process.env.MAIL_FROM_NAME ? process.env.MAIL_FROM_NAME.replace(/"/g, '') : "Aivora";
     const info = await transporter.sendMail({ 
       from: `"${fromName}" <${process.env.MAIL_FROM_ADDRESS || process.env.MAIL_USERNAME}>`, 
@@ -416,20 +417,13 @@ router.post('/integrations/email', async (req, res) => {
   } catch (err) { 
     console.error("❌ [Email Error]:", err);
     
-    // Provide specific guidance based on error type
     if (err.code === 'ETIMEDOUT') {
         return res.status(500).json({ 
-            error: "Connection timed out. Render is failing to reach Gmail on Port 465." 
-        });
-    }
-    if (err.code === 'EAUTH') {
-        return res.status(500).json({ 
-            error: "Login failed. Please check your Gmail App Password." 
+            error: "Network Timeout. Render is blocked from reaching Gmail. Please try an API-based provider (like Resend) instead of SMTP." 
         });
     }
     
     res.status(500).json({ error: err.message }); 
   }
 });
-
 module.exports = router;
