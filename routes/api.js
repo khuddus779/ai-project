@@ -372,58 +372,59 @@ router.post('/integrations/llm', async (req, res) => {
 router.post('/integrations/email', async (req, res) => {
   const { to, subject, body } = req.body;
 
-  if (!process.env.MAIL_USERNAME || !process.env.MAIL_PASSWORD) {
-    console.error("❌ [Email] Missing MAIL_USERNAME or MAIL_PASSWORD");
-    return res.status(500).json({ error: "Server email configuration is missing." });
+  // 1. Validate Config
+  if (!process.env.RESEND_API_KEY) {
+    console.error("❌ [Email] Missing RESEND_API_KEY in environment variables");
+    return res.status(500).json({ error: "Server email configuration is missing (RESEND_API_KEY)." });
   }
 
   try {
-    console.log(`📧 [Email] Connecting to Gmail (SSL/465) for: ${to}`);
+    console.log(`📧 [Email] Sending to: ${to} via Resend API`);
 
-    const transporter = nodemailer.createTransport({
-      host: "smtp.gmail.com",
-      port: 465,
-      secure: true,
-      auth: {
-        user: process.env.MAIL_USERNAME,
-        pass: process.env.MAIL_PASSWORD
+    // 2. Send via HTTP (Port 443) - Cannot be blocked by Render firewalls
+    // Note: For free tier, 'from' must be 'onboarding@resend.dev' 
+    // or a domain you verified in Resend dashboard.
+    const fromAddress = process.env.MAIL_FROM_ADDRESS || 'onboarding@resend.dev';
+    
+    const response = await axios.post(
+      'https://api.resend.com/emails',
+      {
+        from: `Aivora <${fromAddress}>`,
+        to: [to],
+        subject: subject,
+        html: body
       },
-      // --- NEW NETWORK SETTINGS ---
-      tls: {
-        rejectUnauthorized: false
-      },
-      // Force IPv4 (Fixes common cloud network timeouts)
-      family: 4, 
-      // Increase timeouts to prevent premature disconnects
-      connectionTimeout: 10000, // 10 seconds
-      greetingTimeout: 10000,
-      socketTimeout: 10000
-    });
+      {
+        headers: {
+          'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
 
-    await transporter.verify();
-    console.log("✅ [Email] Gmail SSL Connection verified");
-
-    const fromName = process.env.MAIL_FROM_NAME ? process.env.MAIL_FROM_NAME.replace(/"/g, '') : "Aivora";
-    const info = await transporter.sendMail({ 
-      from: `"${fromName}" <${process.env.MAIL_FROM_ADDRESS || process.env.MAIL_USERNAME}>`, 
-      to, 
-      subject, 
-      html: body 
-    });
-
-    console.log(`✅ [Email] Sent: ${info.messageId}`);
-    res.json({ success: true });
+    console.log(`✅ [Email] Sent successfully! ID: ${response.data.id}`);
+    res.json({ success: true, id: response.data.id });
 
   } catch (err) { 
-    console.error("❌ [Email Error]:", err);
+    console.error("❌ [Email Error]:", err.response?.data || err.message);
     
-    if (err.code === 'ETIMEDOUT') {
+    // Provide helpful error messages for common Resend issues
+    if (err.response?.data?.message?.includes("domain")) {
         return res.status(500).json({ 
-            error: "Network Timeout. Render is blocked from reaching Gmail. Please try an API-based provider (like Resend) instead of SMTP." 
+            error: "Resend Error: You can only send FROM 'onboarding@resend.dev' until you verify a domain." 
         });
     }
     
-    res.status(500).json({ error: err.message }); 
+    if (err.response?.data?.message?.includes("test mode")) {
+        return res.status(500).json({ 
+            error: "Resend Free Tier: You can only send TO your own email address for testing." 
+        });
+    }
+
+    res.status(500).json({ 
+        error: "Email API Error: " + (err.response?.data?.message || err.message) 
+    }); 
   }
 });
+
 module.exports = router;
